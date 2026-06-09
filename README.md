@@ -58,7 +58,7 @@ static/
   app.js       frontend search, preview, copy, and voting
   api-docs.html branded API docs page
 requirements.txt
-Procfile       Railway start command
+Procfile       production start command
 ```
 
 ## Run Locally
@@ -299,34 +299,46 @@ Each search result includes a `breakdown` object so reviewers can see how the sc
 
 ## Deployment
 
-This app is ready for Railway. The `Procfile` tells Railway how to start it:
+The live demo is deployed on Render:
+
+```text
+https://wallfinder.onrender.com
+```
+
+The public API docs are here:
+
+```text
+https://wallfinder.onrender.com/api-docs
+```
+
+The `Procfile` contains the production start command:
 
 ```text
 web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-Railway sets `$PORT` automatically.
+Render sets `$PORT` automatically.
 
-Deploy steps:
+Render deploy steps:
 
 1. Push this repo to GitHub.
-2. Go to Railway.
-3. Click **New Project**.
+2. Go to Render.
+3. Click **New**.
 4. Choose **Deploy from GitHub repo**.
 5. Select `birdyboyiyert/wallfinder`.
-6. Railway installs `requirements.txt`.
-7. Railway runs the `Procfile`.
-8. Open the service's **Networking** settings and generate a public domain.
+6. Use `pip install -r requirements.txt` as the build command.
+7. Use `uvicorn app.main:app --host 0.0.0.0 --port $PORT` as the start command.
+8. Render gives the app a public `.onrender.com` URL.
 9. Test the live API:
 
 ```bash
-curl "https://YOUR-RAILWAY-DOMAIN/api/search?q=lofi%20rain%20wallpaper&limit=10"
+curl "https://wallfinder.onrender.com/api/search?q=lofi%20rain%20wallpaper&limit=10"
 ```
 
 Test the POST endpoint:
 
 ```bash
-curl -X POST "https://YOUR-RAILWAY-DOMAIN/api/rate" \
+curl -X POST "https://wallfinder.onrender.com/api/rate" \
   -H "Content-Type: application/json" \
   -d '{"video_id": "VIDEO_ID", "vote": 1}'
 ```
@@ -334,14 +346,14 @@ curl -X POST "https://YOUR-RAILWAY-DOMAIN/api/rate" \
 Open the public docs page:
 
 ```text
-https://YOUR-RAILWAY-DOMAIN/api-docs
+https://wallfinder.onrender.com/api-docs
 ```
 
 ## Important Notes
 
 - CORS is open, so browser apps can call the API.
 - SQLite is fine for local use and demos.
-- On Railway's free tier, `wallfinder.db` is ephemeral and can reset after redeploys.
+- On Render's free tier, `wallfinder.db` is ephemeral and can reset after redeploys.
 - Sorry for any Render weirdness: free Render services can sleep or cold-start. The first request
   or two may briefly return `404`/wake-up behavior, then the same endpoint works once the service
   is running.
