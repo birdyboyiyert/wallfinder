@@ -86,7 +86,47 @@ function buildCard(item, feature) {
   const copyLabel = node.querySelector(".copy-label");
   copyBtn.addEventListener("click", () => copyUrl(item.url, copyBtn, copyLabel));
 
+  // Community voting
+  const countEl = node.querySelector(".vote-count");
+  const upBtn = node.querySelector(".vote-up");
+  const downBtn = node.querySelector(".vote-down");
+  countEl.textContent = String(item.votes ?? 0);
+  upBtn.addEventListener("click", () => sendVote(item.video_id, 1, countEl, upBtn, downBtn));
+  downBtn.addEventListener("click", () => sendVote(item.video_id, -1, countEl, upBtn, downBtn));
+
   return node;
+}
+
+async function sendVote(videoId, vote, countEl, upBtn, downBtn) {
+  if (!videoId) return;
+  try {
+    const res = await fetch("/api/rate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ video_id: videoId, vote }),
+    });
+    if (res.status === 429) {
+      flashStatus("VOTING TOO FAST - WAIT A MINUTE");
+      return;
+    }
+    if (!res.ok) return;
+    const data = await res.json();
+    countEl.textContent = String(data.net_votes);
+    upBtn.classList.toggle("active", vote === 1);
+    downBtn.classList.toggle("active", vote === -1);
+  } catch (_) {
+    flashStatus("COULD NOT RECORD VOTE");
+  }
+}
+
+let flashTimer = null;
+function flashStatus(msg) {
+  const prev = statusEl.innerHTML;
+  statusEl.innerHTML = `<span class="cached-note">${msg}</span>`;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => {
+    statusEl.innerHTML = prev;
+  }, 2000);
 }
 
 function render(items) {
@@ -96,7 +136,7 @@ function render(items) {
   if (!items.length) {
     resultsEl.innerHTML =
       '<div class="notice">NO WALLPAPERS FOUND. TRY ANOTHER VIBE.' +
-      '<span class="sub">try: synthwave city · lofi rain · 4k forest loop</span></div>';
+      '<span class="sub">try: synthwave city / lofi rain / 4k forest loop</span></div>';
     return;
   }
 
@@ -179,10 +219,15 @@ async function doSearch(query) {
       statusEl.textContent = "";
       return;
     }
-    const items = await res.json();
+    const data = await res.json();
+    const items = data.results;
+    const cachedNote = data.cached
+      ? ' / <span class="cached-note"><svg class="icon-xs" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>CACHED</span>'
+      : "";
     statusEl.innerHTML =
       `<span class="count">${items.length}</span> RANKED RESULT${items.length === 1 ? "" : "S"} ` +
-      `FOR "${query.toUpperCase()}"` + (strict ? " · STRICT" : "");
+      `FOR "${query.toUpperCase()}"` + (strict ? " / STRICT" : "") + cachedNote;
     render(items);
   } catch (err) {
     showError("Could not reach the server.");

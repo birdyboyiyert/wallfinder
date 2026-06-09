@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WALLPAPER//FINDER / API DOCS</title>
+  <meta name="description" content="Public API for Wallpaper Finder: search ranked YouTube live-wallpaper loops and vote on them." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    /* Doc-specific layout, reusing the site's :root tokens */
+    .doc-main { max-width: 980px; margin: 0 auto; padding: 28px 24px 64px; }
+    .base-url-box {
+      border: var(--bw) solid var(--border);
+      box-shadow: var(--shadow-accent);
+      background: var(--surface);
+      padding: 18px 20px;
+      margin: 8px 0 36px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .base-url-box .label {
+      font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--muted); font-size: 0.8rem;
+    }
+    .base-url-box code {
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem;
+      color: var(--accent); word-break: break-all;
+    }
+    .endpoint {
+      border: var(--bw) solid var(--border);
+      box-shadow: var(--shadow);
+      background: var(--surface);
+      margin-bottom: 28px;
+    }
+    .endpoint-head {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 16px 18px; border-bottom: var(--bw) solid var(--border);
+    }
+    .method {
+      font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem;
+      padding: 4px 10px; border: var(--bw) solid var(--border); color: #0A0A0A;
+    }
+    .method.get { background: var(--accent); }
+    .method.post { background: var(--accent-2); }
+    .path { font-family: var(--font-head); font-weight: 700; font-size: 1.15rem; }
+    .endpoint-body { padding: 16px 18px; }
+    .endpoint-body p { margin: 0 0 14px; color: var(--muted); font-size: 0.95rem; }
+    .params { width: 100%; border-collapse: collapse; margin: 0 0 18px; }
+    .params th, .params td {
+      text-align: left; padding: 8px 10px; border: 2px solid var(--border);
+      font-family: var(--font-mono); font-size: 0.85rem;
+    }
+    .params th { background: var(--bg); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .params td .pname { color: var(--accent); font-weight: 700; }
+    .code-label {
+      font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; font-size: 0.78rem; color: var(--muted); margin: 14px 0 6px;
+    }
+    .code-wrap { position: relative; }
+    pre {
+      margin: 0; background: var(--bg); border: var(--bw) solid var(--border);
+      padding: 16px; overflow-x: auto;
+      font-family: var(--font-mono); font-size: 0.84rem; line-height: 1.55; color: var(--text);
+    }
+    pre .tok-key { color: var(--accent); }
+    .copy-code {
+      position: absolute; top: 10px; right: 10px;
+      font-family: var(--font-head); font-weight: 700; font-size: 0.72rem; text-transform: uppercase;
+      background: var(--accent); color: #0A0A0A; border: 2px solid var(--border);
+      padding: 6px 10px; cursor: pointer; box-shadow: var(--shadow-sm);
+      transition: transform var(--t), box-shadow var(--t);
+    }
+    .copy-code:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--border); }
+    .copy-code.copied { background: var(--accent-2); }
+    .callout {
+      border: var(--bw) solid var(--accent); box-shadow: var(--shadow-accent);
+      background: var(--surface); padding: 20px; margin: 8px 0 36px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .callout p { margin: 0; font-family: var(--font-mono); font-size: 0.92rem; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
+      font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;
+      color: var(--accent); text-decoration: none; font-size: 0.85rem;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="wordmark">WALLPAPER<span class="slashes">//</span>FINDER</h1>
+    <p class="tagline">public api / search ranked wallpaper loops + vote on them</p>
+  </header>
+
+  <main class="doc-main">
+    <a class="back-link" href="/">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      BACK TO APP
+    </a>
+
+    <div class="base-url-box">
+      <span class="label">Base URL</span>
+      <code id="base-url">__BASE_URL__</code>
+      <button class="copy-code" data-copy-target="#base-url" type="button" aria-label="Copy base URL">COPY</button>
+    </div>
+
+    <div class="callout">
+      <p><strong>Want to try it interactively?</strong> The auto-generated Swagger UI lets you call every endpoint live.</p>
+      <a class="btn btn-accent" href="/docs">OPEN /docs</a>
+    </div>
+
+    <!-- ===================== GET /api/search ===================== -->
+    <section class="endpoint">
+      <div class="endpoint-head">
+        <span class="method get">GET</span>
+        <span class="path">/api/search</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Search YouTube and return ranked, filtered wallpaper loops. Results are cached in
+           SQLite by query (+ strict/limit) for 24h, and community votes are blended into the
+           ranking live.</p>
+        <table class="params">
+          <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pname">q</span></td><td>string</td><td>-</td><td>Required. The search query.</td></tr>
+            <tr><td><span class="pname">strict</span></td><td>bool</td><td>false</td><td>Also require a wallpaper keyword in the title.</td></tr>
+            <tr><td><span class="pname">limit</span></td><td>int</td><td>25</td><td>Candidates to pull from YouTube (1-50).</td></tr>
+            <tr><td><span class="pname">refresh</span></td><td>bool</td><td>false</td><td>Bypass the cache and re-search.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-label">Response (envelope)</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#search-resp" type="button">COPY</button>
+          <pre id="search-resp">{
+  "query": "synthwave city",
+  "strict": false,
+  "cached": true,
+  "count": 20,
+  "results": [
+    {
+      "title": "Synthwave DeLorean Drive - Live Wallpaper - 4K",
+      "channel": "Space Wallpaper 4K",
+      "thumbnail": "https://i.ytimg.com/vi/.../hqdefault.jpg",
+      "duration": 116,
+      "resolution": null,
+      "url": "https://www.youtube.com/watch?v=rneArlA6ouw",
+      "video_id": "rneArlA6ouw",
+      "score": 106,
+      "votes": 0,
+      "breakdown": {
+        "base": 10, "title_keywords": ["live wallpaper", "4k"],
+        "title_points": 88, "resolution_points": 0, "aspect_points": 0,
+        "duration_points": 8, "vote_points": 0, "total": 106
+      }
+    }
+  ]
+}</pre>
+        </div>
+
+        <div class="code-label">curl</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#search-curl" type="button">COPY</button>
+          <pre id="search-curl">curl "__BASE_URL__/api/search?q=synthwave%20city&strict=false&limit=25"</pre>
+        </div>
+
+        <div class="code-label">fetch</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#search-fetch" type="button">COPY</button>
+          <pre id="search-fetch">const res = await fetch(
+  "__BASE_URL__/api/search?q=" + encodeURIComponent("synthwave city")
+);
+const data = await res.json();
+console.log(data.count, data.results);</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== GET /api/top ===================== -->
+    <section class="endpoint">
+      <div class="endpoint-head">
+        <span class="method get">GET</span>
+        <span class="path">/api/top</span>
+      </div>
+      <div class="endpoint-body">
+        <p>The highest community net-rated wallpapers overall, best-first.</p>
+        <table class="params">
+          <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pname">limit</span></td><td>int</td><td>20</td><td>How many to return (1-100).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-label">Response</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#top-resp" type="button">COPY</button>
+          <pre id="top-resp">[
+  { "video_id": "hcVT8Th6JVM", "net_votes": 12, "url": "https://www.youtube.com/watch?v=hcVT8Th6JVM" }
+]</pre>
+        </div>
+
+        <div class="code-label">curl</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#top-curl" type="button">COPY</button>
+          <pre id="top-curl">curl "__BASE_URL__/api/top?limit=20"</pre>
+        </div>
+
+        <div class="code-label">fetch</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#top-fetch" type="button">COPY</button>
+          <pre id="top-fetch">const res = await fetch("__BASE_URL__/api/top?limit=20");
+const top = await res.json();</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== GET /api/health ===================== -->
+    <section class="endpoint">
+      <div class="endpoint-head">
+        <span class="method get">GET</span>
+        <span class="path">/api/health</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Cheap liveness check.</p>
+        <div class="code-label">Response</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#health-resp" type="button">COPY</button>
+          <pre id="health-resp">{ "status": "ok" }</pre>
+        </div>
+        <div class="code-label">curl</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#health-curl" type="button">COPY</button>
+          <pre id="health-curl">curl "__BASE_URL__/api/health"</pre>
+        </div>
+        <div class="code-label">fetch</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#health-fetch" type="button">COPY</button>
+          <pre id="health-fetch">const ok = (await (await fetch("__BASE_URL__/api/health")).json()).status;</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== POST /api/rate ===================== -->
+    <section class="endpoint">
+      <div class="endpoint-head">
+        <span class="method post">POST</span>
+        <span class="path">/api/rate</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Cast a community vote on a wallpaper. One vote per video per person (deduped by a
+           hash of IP + user-agent; raw IPs are never stored). Re-voting updates your vote.
+           Rate-limited to 20 votes/minute.</p>
+        <table class="params">
+          <thead><tr><th>Body field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pname">video_id</span></td><td>string</td><td>Required. The YouTube video id.</td></tr>
+            <tr><td><span class="pname">vote</span></td><td>int</td><td>Required. Must be <strong>+1</strong> or <strong>-1</strong>.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-label">Response</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#rate-resp" type="button">COPY</button>
+          <pre id="rate-resp">{ "video_id": "rneArlA6ouw", "net_votes": 1 }</pre>
+        </div>
+
+        <div class="code-label">curl</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#rate-curl" type="button">COPY</button>
+          <pre id="rate-curl">curl -X POST "__BASE_URL__/api/rate" \
+  -H "Content-Type: application/json" \
+  -d '{"video_id": "rneArlA6ouw", "vote": 1}'</pre>
+        </div>
+
+        <div class="code-label">fetch</div>
+        <div class="code-wrap">
+          <button class="copy-code" data-copy-target="#rate-fetch" type="button">COPY</button>
+          <pre id="rate-fetch">const res = await fetch("__BASE_URL__/api/rate", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ video_id: "rneArlA6ouw", vote: 1 })
+});
+const { net_votes } = await res.json();</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>WALLPAPER//FINDER / API</span>
+    <span>CORS: OPEN / NO AUTH / BE NICE</span>
+  </footer>
+
+  <script>
+    "use strict";
+    document.querySelectorAll(".copy-code").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const el = document.querySelector(btn.getAttribute("data-copy-target"));
+        if (!el) return;
+        const text = el.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (_) {
+          const ta = document.createElement("textarea");
+          ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          document.execCommand("copy"); document.body.removeChild(ta);
+        }
+        const original = btn.textContent;
+        btn.textContent = "COPIED!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 1400);
+      });
+    });
+  </script>
+</body>
+</html>

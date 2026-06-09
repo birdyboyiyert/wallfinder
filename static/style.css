@@ -1,5 +1,5 @@
 /* ====================================================================================
-   WALLPAPER//FINDER — neo-brutalist + bento grid, dark theme
+   WALLPAPER//FINDER - neo-brutalist + bento grid, dark theme
    ==================================================================================== */
 
 :root {
@@ -10,7 +10,7 @@
   --muted: #A1A1AA;
   --border: #F4F4F5;
   --accent: #C6FF3A;     /* electric lime */
-  --accent-2: #FF4D8D;   /* hot pink — score badges */
+  --accent-2: #FF4D8D;   /* hot pink - score badges */
 
   /* Fonts */
   --font-head: "Space Grotesk", system-ui, sans-serif;
@@ -220,6 +220,18 @@ main {
   margin-bottom: 18px;
 }
 .status-line .count { color: var(--accent); font-weight: 700; }
+.cached-note {
+  color: var(--accent-2);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.icon-xs {
+  width: 13px; height: 13px;
+  vertical-align: -2px;
+  margin-right: 3px;
+  fill: var(--accent-2);
+  stroke: none;
+}
 
 /* ============================ BENTO GRID ============================ */
 .bento {
@@ -362,6 +374,44 @@ main {
 }
 .res-badge:empty { display: none; }
 
+/* Vote row */
+.vote-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.vote-btn {
+  flex: 1 1 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--text);
+  border: var(--bw) solid var(--border);
+  border-radius: 0;
+  padding: 9px 0;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--t), box-shadow var(--t), background var(--t);
+}
+.vote-btn:hover { background: #23232b; }
+.vote-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 var(--border);
+}
+.vote-up.active { background: var(--accent); color: #0A0A0A; }
+.vote-down.active { background: var(--accent-2); color: #0A0A0A; }
+.vote-count {
+  flex: 0 0 auto;
+  min-width: 48px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.05rem;
+  border: var(--bw) solid var(--border);
+  background: var(--bg);
+}
+
 .copy-btn { margin-top: auto; width: 100%; }
 .copy-btn.copied { background: var(--accent-2); color: #0A0A0A; }
 
@@ -498,6 +548,14 @@ main {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.footer-links { display: inline-flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.footer-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+  border-bottom: 2px solid transparent;
+}
+.footer-links a:hover { border-bottom-color: var(--accent); }
 
 /* ============================ ICONS ============================ */
 .icon {

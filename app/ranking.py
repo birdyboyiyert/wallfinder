@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Any
 
 # =====================================================================================
-# KEYWORD LISTS — single source of truth, edit here.
+# KEYWORD LISTS - single source of truth, edit here.
 # =====================================================================================
 
 # Positive title signals -> the uploader is framing this as wallpaper material.
@@ -83,9 +83,16 @@ EXCLUDE_KEYWORDS: tuple[str, ...] = (
 
 # Tuning knobs.
 BASE_SCORE = 10
-MIN_SCORE = 12  # results scoring below this are filtered out
+MIN_SCORE = 12          # results scoring below this are filtered out
+VOTE_WEIGHT = 3         # score bonus per net community upvote
+VOTE_BONUS_CAP = 30     # clamp so community votes nudge ranking without fully dominating it
 
 YOUTUBE_WATCH = "https://www.youtube.com/watch?v="
+
+
+def vote_bonus(net: int) -> int:
+    """Convert net community votes into a clamped score bonus (+/- VOTE_BONUS_CAP)."""
+    return max(-VOTE_BONUS_CAP, min(VOTE_BONUS_CAP, net * VOTE_WEIGHT))
 
 
 # =====================================================================================
@@ -105,8 +112,13 @@ def _boost_score(title_lc: str) -> tuple[int, list[str]]:
     return total, hits
 
 
-def _title_resolution_score(title_lc: str) -> int:
-    return sum(pts for kw, pts in RESOLUTION_KEYWORDS.items() if kw in title_lc)
+def _title_resolution_score(title_lc: str) -> tuple[int, list[str]]:
+    total, hits = 0, []
+    for kw, pts in RESOLUTION_KEYWORDS.items():
+        if kw in title_lc:
+            total += pts
+            hits.append(kw)
+    return total, hits
 
 
 def _has_wallpaper_keyword(title_lc: str) -> bool:
@@ -158,7 +170,7 @@ def _aspect_score(width: int | None, height: int | None) -> int:
 
 def _duration_score(seconds: int | None) -> int:
     """
-    Mild handling only — long ambient loops are legitimate wallpapers, so we don't punish
+    Mild handling only - long ambient loops are legitimate wallpapers, so we don't punish
     length. We only nudge: a small bonus for the comfortable 30s-15min range, and a small
     penalty for blink-and-miss clips under ~8s.
     """
@@ -197,8 +209,8 @@ def score_result(entry: dict[str, Any]) -> dict[str, Any] | None:
     if _is_vertical(width, height):
         return None  # it's a Short
 
-    boost, _hits = _boost_score(title_lc)
-    title_res = _title_resolution_score(title_lc)
+    boost, boost_hits = _boost_score(title_lc)
+    title_res, res_hits = _title_resolution_score(title_lc)
     meta_res = _resolution_meta_score(height)
     aspect = _aspect_score(width, height)
 
@@ -206,7 +218,8 @@ def score_result(entry: dict[str, Any]) -> dict[str, Any] | None:
     dur_i = int(dur) if dur else None
     duration_pts = _duration_score(dur_i)
 
-    score = BASE_SCORE + boost + title_res + meta_res + aspect + duration_pts
+    title_points = boost + title_res
+    score = BASE_SCORE + title_points + meta_res + aspect + duration_pts
 
     video_id = entry.get("id") or ""
     url = entry.get("url") or entry.get("webpage_url") or (YOUTUBE_WATCH + video_id)
@@ -219,6 +232,17 @@ def score_result(entry: dict[str, Any]) -> dict[str, Any] | None:
     if not thumbnail and video_id:
         thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
 
+    # Transparent record of how this score was reached - surfaced in the API response.
+    breakdown = {
+        "base": BASE_SCORE,
+        "title_keywords": boost_hits + res_hits,
+        "title_points": title_points,
+        "resolution_points": meta_res,
+        "aspect_points": aspect,
+        "duration_points": duration_pts,
+        "total": score,
+    }
+
     return {
         "title": title,
         "channel": entry.get("channel") or entry.get("uploader") or "Unknown",
@@ -226,7 +250,9 @@ def score_result(entry: dict[str, Any]) -> dict[str, Any] | None:
         "duration": dur_i,
         "resolution": _resolution_label(height, width),
         "url": url,
+        "video_id": video_id,
         "score": score,
+        "breakdown": breakdown,
         # internal, not part of the response model:
         "_id": video_id,
         "_title_lc": title_lc,

@@ -1,7 +1,7 @@
 """
 YouTube search via yt-dlp's Python API.
 
-We never download anything — yt-dlp is used purely as a metadata source. We bias the query
+We never download anything - yt-dlp is used purely as a metadata source. We bias the query
 toward wallpaper loops, run a flat-ish search for speed, and normalize the fields the ranker
 needs: id, title, channel, thumbnail, duration, view_count, width, height, url.
 """
@@ -59,7 +59,7 @@ def _normalize(entry: dict[str, Any]) -> dict[str, Any]:
 def search_youtube(query: str, n: int = 25) -> list[dict[str, Any]]:
     """
     Search YouTube for `query` (we append wallpaper phrasing) and return up to `n` normalized
-    entries. Raises whatever yt-dlp raises on network failure — the caller maps it to 502.
+    entries. Raises whatever yt-dlp raises on network failure - the caller maps it to 502.
     """
     term = f'ytsearch{int(n)}:{query} live wallpaper loop'
 
