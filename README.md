@@ -342,5 +342,8 @@ https://YOUR-RAILWAY-DOMAIN/api-docs
 - CORS is open, so browser apps can call the API.
 - SQLite is fine for local use and demos.
 - On Railway's free tier, `wallfinder.db` is ephemeral and can reset after redeploys.
+- Sorry for any Render weirdness: free Render services can sleep or cold-start. The first request
+  or two may briefly return `404`/wake-up behavior, then the same endpoint works once the service
+  is running.
 - YouTube may rate-limit `yt-dlp` from cloud IP addresses. If that happens, future options are
   the official YouTube Data API or running the project from the Raspberry Pi.
