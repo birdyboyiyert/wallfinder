@@ -1,122 +1,193 @@
 # Wallpaper Finder
 
-Search YouTube for **live-wallpaper loops**, rank them for wallpaper quality, let the community
-vote on them, and copy the best URL straight into
-[Lively Wallpaper](https://www.rocksdanister.com/lively/) - which plays YouTube URLs natively as
-animated desktop wallpapers.
+Wallpaper Finder is a FastAPI project that searches YouTube for live wallpaper loops, ranks the
+results for desktop-wallpaper quality, and lets people vote on the best finds.
 
-Lively already plays any YouTube URL. The value here is **curation**: a search tuned for good
-wallpaper loops, a ranking engine that pushes seamless 4K loops to the top and buries the
-tutorials / reactions / top-10 lists, and a community vote layer that lifts the genuinely great
-ones.
+It is built for Lively Wallpaper, which can use a YouTube URL as an animated desktop wallpaper.
+The app does not download videos. It only asks `yt-dlp` for YouTube search metadata, scores the
+results, and returns useful links.
 
-## How it works
+## API Requirement Checklist
 
-1. You search (e.g. `lofi rain wallpaper`).
-2. `yt-dlp` runs a flat `ytsearch` against YouTube - **no videos are downloaded, only metadata**.
-3. `app/ranking.py` scores each result (title keywords, resolution, aspect ratio, duration),
-   hard-excludes "content" videos, and drops vertical Shorts.
-4. Community votes are blended into the score, results are sorted best-first, and the payload is
-   cached in SQLite.
-5. You hit **COPY URL** on a card and paste into Lively -> *+ Add Wallpaper -> Enter URL*.
+This project has **4 GET endpoints** and **1 POST endpoint**.
+
+| Method | Endpoint | What it does |
+|--------|----------|--------------|
+| GET | `/` | Serves the web app |
+| GET | `/api/health` | Health check for uptime/testing |
+| GET | `/api/search` | Searches YouTube, ranks wallpaper loops, returns cached JSON |
+| GET | `/api/top` | Returns top community-rated videos |
+| POST | `/api/rate` | Adds or updates a community vote for a video |
+
+There is also a human-readable docs page at `/api-docs`, plus FastAPI's automatic interactive
+docs at `/docs`.
+
+## How The API Works
+
+1. A user calls `/api/search?q=lofi rain wallpaper`.
+2. The server normalizes the query and checks SQLite for a cached result.
+3. If the cache is fresh, the API returns instantly with `"cached": true`.
+4. If there is no fresh cache, `yt-dlp` runs a flat YouTube search for metadata only.
+5. `app/ranking.py` scores every result using title keywords, resolution clues, aspect ratio,
+   duration, and community votes.
+6. Bad matches like tutorials, reactions, gameplay, top-10 lists, and vertical Shorts are filtered
+   out.
+7. The response is returned as a JSON envelope with the query, cache state, count, and results.
+8. Users can vote with `/api/rate`; those votes affect future search ranking and `/api/top`.
 
 ## Stack
 
-Python 3.12 / FastAPI / uvicorn / yt-dlp / sqlite3 (stdlib) / vanilla HTML/CSS/JS.
+- Python 3.12
+- FastAPI
+- uvicorn
+- yt-dlp
+- SQLite through Python's standard `sqlite3`
+- Vanilla HTML/CSS/JS frontend
 
-## Project layout
+## Project Layout
 
-```
+```text
 app/
-  main.py      FastAPI app, routes, CORS, serves the frontend + /api-docs
-  search.py    yt-dlp YouTube search (flat, metadata only)
-  ranking.py   wallpaper-quality scoring + filtering + vote blending (the core value)
-  db.py        sqlite: search cache + community ratings
+  main.py      FastAPI app, routes, CORS, response models
+  search.py    YouTube metadata search through yt-dlp
+  ranking.py   wallpaper scoring, filtering, and vote bonus logic
+  db.py        SQLite cache and ratings helpers
 static/
-  index.html   dark neo-brutalist search UI
-  style.css
-  app.js       search, result grid, copy button, preview modal, voting
-  api-docs.html branded API reference page
+  index.html   web app
+  style.css    neo-brutalist styling
+  app.js       frontend search, preview, copy, and voting
+  api-docs.html branded API docs page
 requirements.txt
-Procfile       Railway/Heroku-style process definition
+Procfile       Railway start command
 ```
 
-## Run it (Windows / PowerShell)
+## Run Locally
+
+First, clone the repo:
+
+```powershell
+git clone https://github.com/birdyboyiyert/wallfinder.git
+cd wallfinder
+```
+
+Create a virtual environment and install dependencies:
 
 ```powershell
 py -3.12 -m venv venv
 .\venv\Scripts\Activate.ps1
-# (If activation is blocked: Set-ExecutionPolicy -Scope Process Bypass -Force, then re-run)
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
 ```
 
-Then open <http://127.0.0.1:8000>. Browse the API at <http://127.0.0.1:8000/api-docs> or the
-interactive Swagger UI at <http://127.0.0.1:8000/docs>.
+Start the app:
 
-### macOS / Linux
+```powershell
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8010
+```
+
+API docs:
+
+```text
+http://127.0.0.1:8010/api-docs
+http://127.0.0.1:8010/docs
+```
+
+If port `8010` is blocked on Windows, use another port:
+
+```powershell
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8080
+```
+
+## Where Things Install
+
+The Python packages install into the local virtual environment:
+
+```text
+wallfinder/venv/
+```
+
+The app creates a local SQLite database automatically:
+
+```text
+wallfinder/wallfinder.db
+```
+
+That database stores cached searches and community votes. It is ignored by git.
+
+## Endpoints
+
+### GET `/`
+
+Serves the browser UI.
 
 ```bash
-python3.12 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+curl "http://127.0.0.1:8010/"
 ```
 
-## API
+### GET `/api/health`
 
-CORS is open (`*`), so any web app can call this from the browser. There is no auth.
+Simple health check.
 
-### `GET /` - the web UI
-Serves the search frontend.
+```bash
+curl "http://127.0.0.1:8010/api/health"
+```
 
-### `GET /api-docs` - branded API reference
-Human-readable docs page with copy-paste curl + fetch examples and the live base URL.
+Response:
 
-### `GET /api/health`
 ```json
 { "status": "ok" }
 ```
 
-### `GET /api/search`
-Search, rank, filter, and (24h) cache wallpaper loops.
+### GET `/api/search`
 
-| Param     | Type   | Default | Description                                         |
-|-----------|--------|---------|-----------------------------------------------------|
-| `q`       | string | -       | **Required.** The search query.                     |
-| `strict`  | bool   | `false` | Also require a wallpaper keyword in the title.      |
-| `limit`   | int    | `25`    | Candidates to pull from YouTube before ranking (1-50). |
-| `refresh` | bool   | `false` | Bypass the cache and re-search YouTube.             |
+Searches YouTube, filters bad matches, ranks wallpaper loops, blends community votes, and caches
+the result for 24 hours.
 
-```powershell
-curl "http://127.0.0.1:8000/api/search?q=lofi%20rain%20wallpaper&strict=false&limit=25"
+Query parameters:
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `q` | string | required | Search query |
+| `strict` | bool | `false` | Require wallpaper-related title keywords |
+| `limit` | int | `25` | Number of YouTube candidates to inspect, from 1 to 50 |
+| `refresh` | bool | `false` | Bypass cache and force a new YouTube search |
+
+Example:
+
+```bash
+curl "http://127.0.0.1:8010/api/search?q=lofi%20rain%20wallpaper&limit=10"
 ```
 
-Response is an **envelope**:
+Response shape:
 
-```jsonc
+```json
 {
   "query": "lofi rain wallpaper",
   "strict": false,
-  "cached": true,            // true when served from the SQLite cache (no YouTube call)
-  "count": 9,
+  "cached": false,
+  "count": 2,
   "results": [
     {
-      "title": "...",
-      "channel": "...",
-      "thumbnail": "https://i.ytimg.com/vi/<id>/hqdefault.jpg",
-      "duration": 116,        // seconds, or null if unknown
-      "resolution": "2160p",  // or null when yt-dlp doesn't report pixels in flat mode
-      "url": "https://www.youtube.com/watch?v=<id>",
-      "video_id": "<id>",
-      "score": 106,           // includes any community vote bonus
-      "votes": 0,             // net community votes (upvotes - downvotes)
-      "breakdown": {          // exactly how the score was computed
+      "title": "Example Live Wallpaper 4K Loop",
+      "channel": "Example Channel",
+      "thumbnail": "https://i.ytimg.com/vi/VIDEO_ID/hqdefault.jpg",
+      "duration": 120,
+      "resolution": "2160p",
+      "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+      "video_id": "VIDEO_ID",
+      "score": 106,
+      "votes": 0,
+      "breakdown": {
         "base": 10,
-        "title_keywords": ["live wallpaper", "4k"],
-        "title_points": 88,
-        "resolution_points": 0,
-        "aspect_points": 0,
+        "title_keywords": ["live wallpaper", "4k", "loop"],
+        "title_points": 64,
+        "resolution_points": 24,
+        "aspect_points": 10,
         "duration_points": 8,
         "vote_points": 0,
         "total": 106
@@ -126,111 +197,150 @@ Response is an **envelope**:
 }
 ```
 
-- The cache is keyed by the normalized query **plus** `strict` and `limit`, so variants never
-  collide. Repeat the same search and `"cached": true` comes back instantly.
-- `refresh=true` bypasses the cache; `limit=50` pulls more candidates.
+Run the same search twice. The second response should include:
 
-### `GET /api/top`
-Highest community net-rated wallpapers overall, best-first.
-
-| Param   | Type | Default | Description              |
-|---------|------|---------|--------------------------|
-| `limit` | int  | `20`    | How many to return (1-100). |
-
-```jsonc
-[ { "video_id": "hcVT8Th6JVM", "net_votes": 12, "url": "https://www.youtube.com/watch?v=hcVT8Th6JVM" } ]
+```json
+"cached": true
 ```
 
-### `POST /api/rate`
-Cast a community vote. Body:
+### GET `/api/top`
 
-```jsonc
-{ "video_id": "rneArlA6ouw", "vote": 1 }   // vote must be +1 or -1
-```
+Returns the highest net-rated videos.
 
-```powershell
-curl -X POST "http://127.0.0.1:8000/api/rate" `
-  -H "Content-Type: application/json" `
-  -d '{"video_id": "rneArlA6ouw", "vote": 1}'
+```bash
+curl "http://127.0.0.1:8010/api/top?limit=20"
 ```
 
 Response:
 
 ```json
-{ "video_id": "rneArlA6ouw", "net_votes": 1 }
+[
+  {
+    "video_id": "VIDEO_ID",
+    "net_votes": 5,
+    "url": "https://www.youtube.com/watch?v=VIDEO_ID"
+  }
+]
 ```
 
-- **One vote per video per person.** A voter is identified by a SHA-256 hash of their IP +
-  user-agent - the raw IP is never stored. Re-voting updates your existing vote (so you can
-  flip +1 -> -1 or change your mind); it never stacks.
-- **Anti-abuse:** more than 20 votes/minute from one voter returns `429`. A non-`{1, -1}` vote
-  returns `400`; a missing `video_id` returns `422`.
-- Net votes feed back into search ranking as a clamped bonus (`+/-30`), so the community can nudge
-  good loops up without letting votes fully override the quality score.
+### POST `/api/rate`
 
-## Ranking signals (`app/ranking.py`)
+Adds or updates a vote for one YouTube video.
 
-Keyword lists and tuning knobs live at the top of the file.
+Request body:
 
-| Signal        | Effect                                                                      |
-|---------------|-----------------------------------------------------------------------------|
-| Title keywords| **Boost:** live/moving/animated wallpaper, seamless, loop, screensaver, ambient, no copyright... |
-| Title res.    | **Boost:** 4k, 8k, uhd, 2160p, 1440p, 1080p, 60fps                          |
-| Hard-exclude  | **Drop entirely:** how to, tutorial, fix, guide, setup, install, review, reaction, top 10/20/50, vs, gameplay, walkthrough, trailer, lyrics, interview, podcast, vlog, unboxing |
-| Shape         | **Boost** landscape ~16:9; **drop** vertical videos (Shorts)                |
-| Resolution    | **Boost** real pixel height when yt-dlp reports it (1080p/1440p/4K+)         |
-| Duration      | Mild: small bonus for ~30s-15min, small penalty for sub-8s clips (long ambient loops are fine) |
-| Community     | Net votes add a clamped `+/-30` bonus                                          |
-
-Anything below the minimum score is filtered out. Each result carries a `breakdown` field
-showing exactly how its score was reached.
-
-## Notes
-
-- The SQLite file (`wallfinder.db`) is created automatically on startup and is git-ignored.
-  It holds both the **search cache** (24h TTL) and the **community ratings** - both are live in
-  this version.
-- yt-dlp is used **only** for metadata; nothing is ever downloaded.
-
-## Deploy (Railway)
-
-The app binds `0.0.0.0` and reads the `$PORT` env var in production via the `Procfile`:
-
+```json
+{
+  "video_id": "VIDEO_ID",
+  "vote": 1
+}
 ```
+
+`vote` must be `1` or `-1`.
+
+Example:
+
+```bash
+curl -X POST "http://127.0.0.1:8010/api/rate" \
+  -H "Content-Type: application/json" \
+  -d '{"video_id": "VIDEO_ID", "vote": 1}'
+```
+
+Response:
+
+```json
+{
+  "video_id": "VIDEO_ID",
+  "net_votes": 1
+}
+```
+
+Voting rules:
+
+- One person gets one vote per video.
+- Re-voting updates the existing vote instead of stacking votes.
+- The server stores a SHA-256 hash of IP plus user-agent, not the raw IP.
+- More than 20 votes per minute returns `429`.
+- Invalid votes return `400`.
+
+## Ranking Logic
+
+The ranking code lives in `app/ranking.py`.
+
+Positive signals:
+
+- `live wallpaper`
+- `moving wallpaper`
+- `animated wallpaper`
+- `wallpaper engine`
+- `wallpaper`
+- `seamless`
+- `loop`
+- `4k`, `8k`, `2160p`, `1440p`, `1080p`
+- good desktop aspect ratios
+- reasonable loop duration
+- community upvotes
+
+Hard exclusions:
+
+- tutorials
+- guides
+- reactions
+- reviews
+- gameplay
+- trailers
+- lyrics
+- podcasts
+- vlogs
+- top-10 style videos
+- vertical Shorts
+
+Each search result includes a `breakdown` object so reviewers can see how the score was built.
+
+## Deployment
+
+This app is ready for Railway. The `Procfile` tells Railway how to start it:
+
+```text
 web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-Live URL: **`<add your Railway URL here once deployed>`** - that public URL is where the API
-lives, and `/api-docs` on it shows the real domain in every example.
+Railway sets `$PORT` automatically.
 
-> **Heads-up:** on Railway's free tier the SQLite file is **ephemeral** - it resets on every
-> redeploy, so the search cache and community votes do not persist across deploys. That's fine
-> for now; storage becomes permanent once this moves to the Raspberry Pi (the RaspAPI target).
-
-> **Heads-up:** YouTube sometimes rate-limits / blocks `yt-dlp` requests coming from cloud IP
-> ranges. If `/api/search` starts returning `502`s in production, that's the cause. The fix is
-> to move to the official YouTube Data API (key-based) or run from the Raspberry Pi's
-> residential IP - both planned for a later step.
-
-### Railway steps
+Deploy steps:
 
 1. Push this repo to GitHub.
-2. In Railway, click **New Project** -> **Deploy from GitHub repo** and select the repo.
-3. Railway detects Python from `requirements.txt`, installs dependencies, and runs the `Procfile`.
-4. Open the deployed service, go to **Settings** -> **Networking**, and generate/copy the public domain.
-5. Test the live search endpoint:
+2. Go to Railway.
+3. Click **New Project**.
+4. Choose **Deploy from GitHub repo**.
+5. Select `birdyboyiyert/wallfinder`.
+6. Railway installs `requirements.txt`.
+7. Railway runs the `Procfile`.
+8. Open the service's **Networking** settings and generate a public domain.
+9. Test the live API:
 
 ```bash
 curl "https://YOUR-RAILWAY-DOMAIN/api/search?q=lofi%20rain%20wallpaper&limit=10"
 ```
 
-6. Test the required POST endpoint:
+Test the POST endpoint:
 
 ```bash
 curl -X POST "https://YOUR-RAILWAY-DOMAIN/api/rate" \
   -H "Content-Type: application/json" \
-  -d '{"video_id": "rneArlA6ouw", "vote": 1}'
+  -d '{"video_id": "VIDEO_ID", "vote": 1}'
 ```
 
-7. Open `https://YOUR-RAILWAY-DOMAIN/api-docs` to verify the branded docs page shows the live
-   base URL in its examples.
+Open the public docs page:
+
+```text
+https://YOUR-RAILWAY-DOMAIN/api-docs
+```
+
+## Important Notes
+
+- CORS is open, so browser apps can call the API.
+- SQLite is fine for local use and demos.
+- On Railway's free tier, `wallfinder.db` is ephemeral and can reset after redeploys.
+- YouTube may rate-limit `yt-dlp` from cloud IP addresses. If that happens, future options are
+  the official YouTube Data API or running the project from the Raspberry Pi.

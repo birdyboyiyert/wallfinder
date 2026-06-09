@@ -1,0 +1,12 @@
+INFO:     127.0.0.1:53086 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53098 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53114 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53114 - "GET /static/style.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:53115 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:53118 - "GET /api/search?q=LOFI%20RAIN&strict=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53118 - "POST /api/rate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53118 - "POST /api/rate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53118 - "POST /api/rate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53142 - "GET /api/search?q=waterpark&strict=false HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53158 - "POST /api/rate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53158 - "GET /api/search?q=ninjago&strict=false HTTP/1.1" 200 OK
